@@ -4,6 +4,8 @@ from django.shortcuts import render,HttpResponse,redirect
 from django.views.decorators.csrf import csrf_exempt
 from myapp.models import Board
 from myapp.models import Comment
+from myapp.forms.boardform import BoardForm
+
 
 
 boards = Board.objects.values()
@@ -60,6 +62,7 @@ def HTMLTemplate(articleTag, id=None):
     
 # Create your views here.
 def index(request):
+
     article = '''
     <h2>Welcome</h2> 
     Hello, Django
@@ -82,11 +85,24 @@ def create(request):
         '''
         return HttpResponse(HTMLTemplate(article))
     elif request.method == 'POST':
-        board =  Board(board_title = request.POST['title'],board_text = request.POST['body'])#엔티티 생성
-        board.save()#저장 
-        url = '/read/'+str(board.id)
-        boards = Board.objects.values()
-        return redirect(url)
+        boardForm = BoardForm(request.POST)
+        if(boardForm.is_valid()):
+            board =  Board(board_title = request.POST['title'],board_text = request.POST['body'])#엔티티 생성
+            board.save()#저장 
+            url = '/read/'+str(board.id)
+            boards = Board.objects.values()
+            return redirect(url)
+        else :
+            article = f'''
+            <form action="/create/" method="post">
+                <p><input type="text" name="title" placeholder="title"></p>
+                 {boardForm.errors.as_text()}
+                <p><textarea name="body" placeholder="body"></textarea></p>
+               
+                <p><input type="submit"></p>
+            </form>
+        '''
+            return HttpResponse(HTMLTemplate(article))
 # 글 읽기
 def read(request,id):
     article = ''
