@@ -10,65 +10,14 @@ from myapp.forms.boardform import BoardForm
 
 boards = Board.objects.values()
 
-# 템플릿
-def HTMLTemplate(articleTag, id=None):
-    global boards
-    contextUI = ''
-    commentUI = ''
-    if id != None:
-        contextUI = f'''
-            <li>
-                <form action="/delete/" method="post">
-                    <input type="hidden" name="id" value={id}>
-                    <input type="submit" value="delete">
-                </form>
-            </li>
-            <li><a href="/update/{id}">update</a></li>
-        '''
-        
-        commentUI = f'''
-            -----댓글쓰기-----
-         
-                <form action="/comment/create/" method="post">
-                <p><textarea name="comment" placeholder="comment"></textarea></p>
-                    <input type="hidden" name="id" value={id}>
-                    <input type="submit" value="create">
-                </form>
-            
-           
-        '''
-        
-    ol = ''
-    for board in boards:
-        ol += f'<li><a href="/read/{board["id"]}">{board["board_title"]}</a></li>'
-    return f'''
-    <html>
-    <body>
-        <h1><a href="/">Django</a></h1>
-        <ul>
-            {ol}
-        </ul>
-        {articleTag}
-        {commentUI}
-        <ul>
-            <li><a href="/create/">create</a></li>
-            {contextUI}
-        </ul>
-        
-        
-    </body>
-    </html>
-    '''
+
     
 # Create your views here.
 def index(request):
-
-    article = '''
-    <h2>Welcome</h2> 
-    Hello, Django
-    '''
+    
+    context = {"articletag" : "index","boards" : boards}
    
-    return HttpResponse(HTMLTemplate(article)) 
+    return render(request,'myapp/index.html',context)
 
 # =======board======
 # 글 쓰기
@@ -76,44 +25,26 @@ def index(request):
 def create(request):
     global boards
     if request.method == 'GET':
-        article = '''
-            <form action="/create/" method="post">
-                <p><input type="text" name="title" placeholder="title"></p>
-                <p><textarea name="body" placeholder="body"></textarea></p>
-                <p><input type="submit"></p>
-            </form>
-        '''
-        return HttpResponse(HTMLTemplate(article))
+        context = {"articletag" : "create","boards" : boards}
+        return render(request,'myapp/index.html',context)
     elif request.method == 'POST':
         boardForm = BoardForm(request.POST)
         if(boardForm.is_valid()):
-            board =  Board(board_title = request.POST['title'],board_text = request.POST['body'])#엔티티 생성
-            board.save()#저장 
+            board =  boardForm.save()#엔티티 생성 및 저장 
             url = '/read/'+str(board.id)
             boards = Board.objects.values()
             return redirect(url)
         else :
-            article = f'''
-            <form action="/create/" method="post">
-                <p><input type="text" name="title" placeholder="title"></p>
-                 {boardForm.errors.as_text()}
-                <p><textarea name="body" placeholder="body"></textarea></p>
-               
-                <p><input type="submit"></p>
-            </form>
-        '''
-            return HttpResponse(HTMLTemplate(article))
+            context = {"articletag" : "create","boards" : boards,"boardForm": boardForm}
+            return render(request,'myapp/index.html',context)
+            
 # 글 읽기
 def read(request,id):
     article = ''
     board = Board.objects.get(id = int(id))
     comments = Comment.objects.filter(board=board)
-    ol = "<ul>"
-    for comment in comments:
-        ol += f'댓글 : {comment.comment_text} <br> '
-    ol+="</ul>"
-    article = f'<h2>{board.board_title}</h2>{board.board_text}'+ol;
-    return HttpResponse(HTMLTemplate(article, id))
+    context = {"articletag" : "read","boards" : boards,"readBoard":board,"comments":comments}
+    return render(request,'myapp/index.html',context)
 # 글 삭제 
 @csrf_exempt
 def delete(request):
@@ -129,21 +60,19 @@ def update(request,id):
     global boards
     if request.method == 'GET':
         board = Board.objects.get(id = int(id)) 
-        article = f'''
-            <form action="/update/{id}/" method="post">
-                <p><input type="text" name="title" placeholder="title" value={board.board_title}></p>
-                <p><textarea name="body" placeholder="body">{board.board_text}</textarea></p>
-                <p><input type="submit"></p>
-            </form>
-        '''
-        return HttpResponse(HTMLTemplate(article, id))
+        context = {"articletag" : "update","boards" : boards,"selectBoard":board}
+        return render(request,'myapp/index.html',context)
     elif request.method == 'POST':
         board = Board.objects.get(id = int(id)) 
-        board.board_title = request.POST['title']
-        board.board_text = request.POST['body']
-        board.save()
-        boards = Board.objects.values()
-        return redirect(f'/read/{id}')
+        boardForm = BoardForm(request.POST,instance = board)
+        if(boardForm.is_valid()):
+            updateBoard =  boardForm.save()#업데이트 내용 저장
+            url = '/read/'+str(updateBoard.id)
+            boards = Board.objects.values()
+            return redirect(url)
+        else :
+            context = {"articletag" : "create","boards" : boards,"boardForm": boardForm}
+            return render(request,'myapp/index.html',context)
     
     
 #=====Comment=====

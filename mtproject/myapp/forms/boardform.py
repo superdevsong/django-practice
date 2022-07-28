@@ -1,6 +1,9 @@
-from django import forms
+from django.forms import ModelForm
+from myapp.models import Board
 
 #boardform
-class BoardForm(forms.Form):
-    title = forms.CharField(max_length=20)
-    body = forms.Textarea()
+class BoardForm(ModelForm):
+    class Meta:
+        model = Board
+        fields = ['board_title','board_text']
+        

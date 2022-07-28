@@ -1,0 +1,57 @@
+<html>
+    <body>
+        <h1><a href="/">Django</a></h1>
+        <ul>
+            {% for board in boards %}
+            <li><a href="/read/{{board.id}}">{{board.board_title}}</a></li>
+             {% endfor %}
+        </ul>
+        {% if articletag == "index" %}
+        <h2>Welcome</h2> 
+        Hello, Django
+        {% elif articletag == "create" %}
+        <form action="/create/" method="post">
+            <p><input type="text" name="board_title" placeholder="title"></p>
+            {% if boardForm.errors %}
+            {{boardForm.errors.as_text}}
+            {%endif%}
+            <p><textarea name="board_text" placeholder="body"></textarea></p>
+            <p><input type="submit"></p>
+        </form>
+        {% elif articletag == "read" %}
+
+        <h2>{{readBoard.board_title}}</h2>{{readBoard.board_text}}
+        {% for comment in comments %}
+        댓글 : {{comment.comment_text}} <br> 
+        {% endfor %}
+        <br><br>
+        -----댓글쓰기-----<br>
+         
+        <form action="/comment/create/" method="post">
+            <p><textarea name="comment" placeholder="comment"></textarea></p>
+                <input type="hidden" name="id" value={{readBoard.id}}>
+                <input type="submit" value="create">
+        </form>
+        {% elif articletag == "update" %}        
+        <form action="/update/{{selectBoard.id}}/" method="post">
+            <p><input type="text" name="board_title" placeholder="title" value={{selectBoard.board_title}}></p>
+            <p><textarea name="board_text" placeholder="body">{{selectBoard.board_text}}</textarea></p>
+            <p><input type="submit"></p>
+        </form>
+        {% endif%}
+        
+        <ul>
+            <li><a href="/create/">create</a></li>
+            {% if articletag == "read"%}
+        <li>
+            <form action="/delete/" method="post">
+                <input type="hidden" name="id" value={{readBoard.id}}>
+                <input type="submit" value="delete">
+            </form>
+        </li>
+        <li><a href="/update/{{readBoard.id}}">update</a></li>
+        {% endif%}
+        </ul>
+        
+    </body>
+</html>
